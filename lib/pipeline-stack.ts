@@ -31,6 +31,7 @@ export class PipelineStack extends cdk.Stack {
         codeBuildDefaults: {
             rolePolicy: [
                 new iam.PolicyStatement({
+                    effect: iam.Effect.ALLOW,
                     actions: ['ec2:DescribeAvailabilityZones'],
                     resources: ['*']
                   })                
