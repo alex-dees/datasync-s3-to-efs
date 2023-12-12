@@ -1,6 +1,7 @@
 
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as pipelines from 'aws-cdk-lib/pipelines';
 import { DatasyncS3ToEfsStack } from './datasync-s3-to-efs-stack';
 
@@ -26,9 +27,18 @@ export class PipelineStack extends cdk.Stack {
                 'npm run build',
                 'npx cdk synth',
             ]
-        })
+        }),
+        synthCodeBuildDefaults: {
+            rolePolicy: [
+                new iam.PolicyStatement({
+                    actions: ['ec2:DescribeAvailabilityZones'],
+                    resources: ['*']
+                  })                
+            ]
+        }
     });
 
-    // pipeline.addStage(new AppStage(this, 'App', props));
+    // deploy the pipeline first before adding the stage
+    pipeline.addStage(new AppStage(this, 'App', props));
   }
 }
