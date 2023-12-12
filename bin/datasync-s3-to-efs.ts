@@ -2,8 +2,9 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { DatasyncS3ToEfsStack } from '../lib/datasync-s3-to-efs-stack';
+import { PipelineStack } from '../lib/pipeline-stack';
 
 const app = new cdk.App();
-new DatasyncS3ToEfsStack(app, 'DatasyncS3ToEfsStack', {
+new PipelineStack(app, 'DataSyncPipeline', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
 });
