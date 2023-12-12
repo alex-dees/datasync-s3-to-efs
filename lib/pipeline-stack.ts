@@ -28,13 +28,13 @@ export class PipelineStack extends cdk.Stack {
                 'npx cdk synth',
             ]
         }),
-        synthCodeBuildDefaults: {
+        codeBuildDefaults: {
             rolePolicy: [
                 new iam.PolicyStatement({
                     actions: ['ec2:DescribeAvailabilityZones'],
                     resources: ['*']
                   })                
-            ]
+            ]            
         }
     });
 
