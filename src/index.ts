@@ -1,6 +1,5 @@
 import { Handler } from "aws-lambda";
 import * as ds from '@aws-sdk/client-datasync';
-import { exec } from "child_process";
 
 export const handler: Handler = async (event, context) => {
     try {
