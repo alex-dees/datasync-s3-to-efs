@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as efs from 'aws-cdk-lib/aws-efs';
+import * as sd from 'aws-cdk-lib/aws-s3-deployment';
 
 import { Net } from './constructs/net';
 import { Bastion } from './constructs/bastion';
@@ -13,11 +14,22 @@ export class DatasyncS3ToEfsStack extends cdk.Stack {
 
         const vpc = new Net(this, 'Net').vpc;
 
+        /* S3 source */
+
         const bkt = new s3.Bucket(this, 'Bkt', {
             enforceSSL: true,
+            autoDeleteObjects: true,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             encryption: s3.BucketEncryption.S3_MANAGED
         });
+        
+        // datasync expects at least one source file
+        new sd.BucketDeployment(this, 'S3Dep', {
+            destinationBucket: bkt,
+            sources: [sd.Source.data('.empty', '')]
+        });
+
+        /* FS destination */
 
         const fs = new efs.FileSystem(this, 'Fs', {
             vpc,
@@ -38,14 +50,9 @@ export class DatasyncS3ToEfsStack extends cdk.Stack {
             }
         });
 
-        const bastion = new Bastion(this, 'Bastion', {
-            vpc,
-            fsid: fs.fileSystemId
-        });
+        /* Do sync */
 
-        fs.connections.allowDefaultPortFrom(bastion.host);
-
-        const sync = new Sync(this, 'Sync', {
+        new Sync(this, 'Sync', {
             vpc,
             src: bkt,
             dst: { fs, ap },
@@ -53,6 +60,13 @@ export class DatasyncS3ToEfsStack extends cdk.Stack {
                 type: TriggerType.SCHEDULE,
                 minutes: 2
             }
+        });
+
+        /* View files */
+        
+        new Bastion(this, 'Bastion', {
+            vpc,
+            fs
         });
     }
 }

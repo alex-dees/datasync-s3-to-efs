@@ -8,7 +8,6 @@ import * as efs from 'aws-cdk-lib/aws-efs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ds from 'aws-cdk-lib/aws-datasync';
 import * as events from 'aws-cdk-lib/aws-events';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as nodefn from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as sources from 'aws-cdk-lib/aws-lambda-event-sources';
@@ -76,7 +75,6 @@ export class Sync extends Construct {
         const sg = new ec2.SecurityGroup(this, 'DstSg', { vpc });
 
         const sgArn = cdk.Arn.format({
-            //account: vpc.env.account,
             service: 'ec2',
             resource: 'security-group',
             resourceName: sg.securityGroupId
@@ -85,10 +83,8 @@ export class Sync extends Construct {
 
         props.dst.fs.connections.allowDefaultPortFrom(sg);
 
-        return props.vpc.privateSubnets.map((s, i) => {
-            
+        return vpc.privateSubnets.map((s, i) => {
             const subArn = cdk.Arn.format({
-                // account: s..env.account,
                 service: 'ec2',
                 resource: 'subnet',
                 resourceName: s.subnetId
@@ -146,13 +142,6 @@ export class Sync extends Construct {
             environment: { TASKS: JSON.stringify({ arns }) },
             entry: path.join(__dirname, '../../src', 'index.ts')
         });
-        // const fn = new lambda.Function(this, 'DsFn', {
-        //     handler: 'index.handler',
-        //     timeout: cdk.Duration.seconds(15),
-        //     runtime: lambda.Runtime.NODEJS_18_X,
-        //     environment: { TASKS: JSON.stringify({ arns }) },
-        //     code: lambda.Code.fromAsset(path.join(__dirname, '../src'))
-        // });
 
         fn.addToRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,

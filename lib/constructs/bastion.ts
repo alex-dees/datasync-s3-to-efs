@@ -1,31 +1,30 @@
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as efs from 'aws-cdk-lib/aws-efs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 export interface BastionProps {
     vpc: ec2.IVpc,
-    fsid: string
+    fs: efs.IFileSystem
 }
 
 export class Bastion extends Construct {
-  readonly host : ec2.BastionHostLinux;
+    constructor(scope: Construct, id: string, props: BastionProps) {
+        super(scope, id);
 
-  constructor(scope: Construct, id: string, props: BastionProps) {
-    super(scope, id);
-    
-    const userData = ec2.UserData.forLinux();
+        const host = new ec2.BastionHostLinux(this, 'Bastion', { 
+            vpc: props.vpc,
+            requireImdsv2: true,
+            machineImage: ec2.MachineImage.latestAmazonLinux2()
+        });
 
-    userData.addCommands(
-      'sudo yum install -y amazon-efs-utils',
-      `mkdir /efs && mount -t efs -o tls,iam ${props.fsid}:/ /efs`
-    );
+        host.instance.addUserData(
+            'sudo yum install -y amazon-efs-utils',
+            `mkdir /efs && mount -t efs -o tls,iam ${props.fs.fileSystemId}:/ /efs`
+        )
 
-    this.host = new ec2.BastionHostLinux(this, 'Bastion', { 
-      vpc: props.vpc,
-      requireImdsv2: true,
-      machineImage: ec2.MachineImage.latestAmazonLinux2({ userData })
-    });
-    
-    this.host.role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'));
-  }
+        props.fs.connections.allowDefaultPortFrom(host);
+        host.node.addDependency(props.fs.mountTargetsAvailable);
+        host.role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'));
+    }
 }

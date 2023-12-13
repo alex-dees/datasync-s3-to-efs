@@ -1,6 +1,5 @@
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as iam from 'aws-cdk-lib/aws-iam';
 
 export class Net extends Construct {
   readonly vpc : ec2.IVpc;
